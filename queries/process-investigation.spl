@@ -1,0 +1,29 @@
+# 1. Find a specific process
+index=* "notepad.exe"
+
+
+# 2. Extract process information
+index=* "notepad.exe"
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| rex field=_raw "<Data Name='ParentImage'>(?<ParentImage>[^<]+)</Data>"
+| rex field=_raw "<Data Name='CommandLine'>(?<CommandLine>[^<]+)</Data>"
+| table _time Image ParentImage CommandLine
+
+
+# 3. Investigate PowerShell activity
+index=*
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| rex field=_raw "<Data Name='CommandLine'>(?<CommandLine>[^<]+)</Data>"
+| rex field=_raw "<Data Name='ParentImage'>(?<ParentImage>[^<]+)</Data>"
+| rex field=_raw "<Data Name='User'>(?<User>[^<]+)</Data>"
+| search Image="*powershell.exe"
+| table _time User Image ParentImage CommandLine
+| sort - _time
+
+
+# 4. Analyze parent-child process relationships
+index=*
+| rex field=_raw "<Data Name='Image'>(?<Image>[^<]+)</Data>"
+| rex field=_raw "<Data Name='ParentImage'>(?<ParentImage>[^<]+)</Data>"
+| stats count by ParentImage Image
+| sort - count
